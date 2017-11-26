@@ -1,0 +1,5 @@
+[run]
+include = g_intim/*
+omit = *migrations*, *tests*
+plugins =
+    django_coverage_plugin
