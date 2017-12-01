@@ -152,6 +152,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': env.db('DATABASE_URL', default='postgres:///g_intim'),
 }
+
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 
@@ -350,6 +351,11 @@ HAYSTACK_CONNECTIONS = {
         'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
     },
 }
+
+# oscar-import-export
+# ------------------------------------------------------------------------------
+CATEGORIES_SPLIT = ';' 
+IMAGES_SPLIT = ','
 
 # django-oscar
 # ------------------------------------------------------------------------------

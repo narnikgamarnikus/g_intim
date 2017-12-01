@@ -1,6 +1,12 @@
 from io import BytesIO
 from openpyxl import load_workbook
 
+import requests
+
+from django.conf import settings
+from django.core.files import File
+from django.core.files.temp import NamedTemporaryFile
+
 from .base import PortationBase
 from oscar.apps.catalogue.models import Product
 from oscar.apps.catalogue.models import Category
@@ -8,12 +14,15 @@ from oscar.apps.catalogue.models import ProductCategory
 from oscar.apps.catalogue.models import ProductAttributeValue
 from oscar.apps.catalogue.models import AttributeOption
 from oscar.apps.catalogue.models import ProductClass
+from oscar.apps.catalogue.models import ProductImage
 
 
 class CatalogueImporter(PortationBase):
 
     def __init__(self, file):
         self.wb = load_workbook(BytesIO(file.read()))
+        self.ocs = settings.CATEGORIES_SPLIT
+        self.ois = settings.IMAGES_SPLIT
 
     def handle(self):
         self.statistics = {
@@ -40,21 +49,24 @@ class CatalogueImporter(PortationBase):
         values = dict(zip(self.FIELDS, values))
         product = None
 
-        product = self._get__or_create_product(values[self.ID], values[self.UPC])
-        p_class = self._get__or_create_product_class(values[self.PRODUCT_CLASS])
+        product = self._get_or_create_product(values[self.ID], values[self.UPC])
+        p_class = self._get_or_create_product_class(values[self.PRODUCT_CLASS])
         
         product = self._product_save(product, p_class, values[self.TITLE], 
                                 values[self.DESCRIPTION], values[self.UPC])
 
+        if values[self.IMAGE]:
+            self._get_or_create_product_image(product, values[self.IMAGE])
+
         ProductCategory.objects.filter(product=product).delete()
-        self.save_product_attributes(product, data)
+        self._save_product_attributes(product, data)
 
         for category in self._get_or_create_categories(values[self.CATEGORY]):
             product_category = self._product_category_save(product, category)
-
+        
         return product
 
-    def save_product_attributes(self, product, data):
+    def _save_product_attributes(self, product, data):
         
         self.attributes_to_import = product.product_class.attributes.all()
         attrs_values = data[len(self.FIELDS):]
@@ -79,7 +91,7 @@ class CatalogueImporter(PortationBase):
 
     def _get_or_create_categories(self, categories_list):
 
-        categories_list = categories_list.split(', ')
+        categories_list = categories_list.split(self.ocs)
 
         if isinstance(categories_list, type(None)):
             categories_list = []
@@ -96,7 +108,7 @@ class CatalogueImporter(PortationBase):
 
         return categories
 
-    def _get__or_create_product(self, id, upc):
+    def _get_or_create_product(self, id, upc):
         
         product = Product()
         
@@ -115,15 +127,15 @@ class CatalogueImporter(PortationBase):
 
         return product
 
-    def _get__or_create_product_class(self, name):
+    def _get_or_create_product_class(self, name):
         
         product_class, created = ProductClass.objects.get_or_create(name=name)
-
+        '''
         if created:
             self.statistics['created'] += 1
         else:
             self.statistics['updated'] += 1
-
+        '''
         return product_class
 
     def _product_save(self, product, product_class, title, description, product_upc):
@@ -147,3 +159,46 @@ class CatalogueImporter(PortationBase):
         product_category.save()
 
         return product_category
+
+    def _get_or_create_product_image(self, product, images_list):
+
+            i = 0
+            
+            for image in images_list.split(self.ois):
+                image = image.strip()
+                if image:
+                    i += 1
+                    print(i)
+                    r = requests.get(image)
+
+                    img_temp = NamedTemporaryFile(delete=True)
+                    img_temp.write(r.content)
+                    img_temp.flush()
+
+                    image_name = '{}-{}-{}'.format(
+                        product.slug,
+                        i,
+                        image.split('/')[-1]                        
+                        )
+
+                    product_images = ProductImage.objects.filter(
+                        product = product
+                        )
+                    
+                    if product_images:
+                        for product_image in product_images:
+                            if not product_image.original.name == image_name:
+                                self._product_image_save(product, image_name, img_temp)
+                    else:
+                        self._product_image_save(product, image_name, img_temp)
+
+    def _product_image_save(self, product, image_name, content):
+
+        product_image = ProductImage()
+        product_image.product = product
+        product_image.original.save(image_name, File(content), save=True)
+        product_image.save()
+        
+        print(product_image)
+        
+        return product_image 

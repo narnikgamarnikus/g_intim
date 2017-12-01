@@ -6,6 +6,7 @@ class PortationBase():
     CATEGORY = 'Category'
     TITLE = 'Title'
     DESCRIPTION = 'Description'
+    IMAGE = 'Image'
 
     FIELDS = [
         ID,
@@ -14,4 +15,5 @@ class PortationBase():
         CATEGORY,
         TITLE,
         DESCRIPTION,
+        IMAGE
     ]
