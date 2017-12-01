@@ -54,6 +54,8 @@ django-compressor==2.2
 
 # Your custom requirements go here
 -e git+https://github.com/django-oscar/django-oscar.git@master#egg=django-oscar
+#oscar-portation
+openpyxl
 
 #pycountry==16.11.27.1
 pycountry==17.1.8

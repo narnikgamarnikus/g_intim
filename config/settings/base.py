@@ -14,6 +14,8 @@ from oscar import OSCAR_MAIN_TEMPLATE_DIR
 from oscar import get_core_apps
 from oscar.defaults import *
 
+from django.utils.translation import ugettext_lazy as _
+
 ROOT_DIR = environ.Path(__file__) - 3  # (g_intim/config/settings/base.py - 3 = g_intim/)
 APPS_DIR = ROOT_DIR.path('g_intim')
 
@@ -73,8 +75,11 @@ THIRD_PARTY_APPS = [
     'taggit',
 
     'widget_tweaks',
-    'pycountry'    
-] + tuple(get_core_apps())
+    'pycountry',
+    'g_intim.portation'
+] + get_core_apps(
+    ['g_intim.shop.dashboard']
+    )
 
 # Apps specific for this project go here.
 LOCAL_APPS = [
@@ -96,6 +101,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'django.middleware.locale.LocaleMiddleware',    
 
     'wagtail.wagtailcore.middleware.SiteMiddleware',
     'wagtail.wagtailredirects.middleware.RedirectMiddleware',
@@ -156,7 +163,7 @@ DATABASES['default']['ATOMIC_REQUESTS'] = True
 TIME_ZONE = 'UTC'
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
@@ -169,6 +176,9 @@ USE_L10N = True
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
 USE_TZ = True
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#append-slash
+APPEND_SLASH = True
 
 # TEMPLATE CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -335,3 +345,37 @@ HAYSTACK_CONNECTIONS = {
         'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
     },
 }
+
+# django-oscar
+# ------------------------------------------------------------------------------
+OSCAR_INITIAL_ORDER_STATUS = 'Pending'
+OSCAR_INITIAL_LINE_STATUS = 'Pending'
+OSCAR_ORDER_STATUS_PIPELINE = {
+    'Pending': ('Being processed', 'Cancelled',),
+    'Being processed': ('Processed', 'Cancelled',),
+    'Cancelled': (),
+}
+
+# See http://docs.oscarcommerce.com/en/latest/ref/settings.html#oscar-default-currency
+OSCAR_DEFAULT_CURRENCY = 'RUB'
+
+OSCAR_DASHBOARD_NAVIGATION += [
+    {
+        'label': _('Import/export'),
+        'icon': 'icon-refresh',
+        'children': [
+            {
+                'label': _('Import'),
+                'url_name': 'dashboard:portation-import',
+                'access_fn':
+                    lambda user, url_name, url_args, url_kwargs: user.is_staff,
+            },
+            {
+                'label': _('Export'),
+                'url_name': 'dashboard:portation-export',
+                'access_fn':
+                    lambda user, url_name, url_args, url_kwargs: user.is_staff,
+            },
+        ],
+    },
+]
