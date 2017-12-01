@@ -44,6 +44,7 @@ class CatalogueImporter(PortationBase):
                     self.statistics['errors'].append(str(row[0].row))
 
     def create_update_product(self, data):
+
         field_values = data[0:len(self.FIELDS)]
         values = [item.value for item in field_values]
         values = dict(zip(self.FIELDS, values))
@@ -58,7 +59,6 @@ class CatalogueImporter(PortationBase):
         if values[self.IMAGE]:
             self._get_or_create_product_image(product, values[self.IMAGE])
 
-        ProductCategory.objects.filter(product=product).delete()
         self._save_product_attributes(product, data)
 
         for category in self._get_or_create_categories(values[self.CATEGORY]):
@@ -110,32 +110,25 @@ class CatalogueImporter(PortationBase):
 
     def _get_or_create_product(self, id, upc):
         
-        product = Product()
-        
         try:
             product = Product.objects.get(id = id)
             self.statistics['updated'] += 1
         except Product.DoesNotExist:
             pass
 
-        if not product is None:
-            try:
-                product = Product.objects.get(upc = upc)
-                self.statistics['updated'] += 1
-            except Product.DoesNotExist:
-                pass
+        try:
+            product = Product.objects.get(upc = upc)
+            self.statistics['updated'] += 1
+        except Product.DoesNotExist:
+            product = Product()
+            self.statistics['created'] += 1
 
         return product
 
     def _get_or_create_product_class(self, name):
         
         product_class, created = ProductClass.objects.get_or_create(name=name)
-        '''
-        if created:
-            self.statistics['created'] += 1
-        else:
-            self.statistics['updated'] += 1
-        '''
+        
         return product_class
 
     def _product_save(self, product, product_class, title, description, product_upc):
@@ -151,6 +144,8 @@ class CatalogueImporter(PortationBase):
 
     def _product_category_save(self, product, category):
 
+        ProductCategory.objects.filter(product=product).delete()
+
         product_category = ProductCategory()
         
         product_category.product = product
@@ -162,34 +157,30 @@ class CatalogueImporter(PortationBase):
 
     def _get_or_create_product_image(self, product, images_list):
 
-            i = 0
-            
+            ProductImage.objects.filter(product=product).delete()
+
             for image in images_list.split(self.ois):
                 image = image.strip()
                 if image:
-                    i += 1
-                    print(i)
                     r = requests.get(image)
 
                     img_temp = NamedTemporaryFile(delete=True)
                     img_temp.write(r.content)
                     img_temp.flush()
 
-                    image_name = '{}-{}-{}'.format(
+                    image_name = '{}-{}'.format(
                         product.slug,
-                        i,
-                        image.split('/')[-1]                        
+                        image.split('/')[-1]
                         )
 
-                    product_images = ProductImage.objects.filter(
-                        product = product
-                        )
+                    product_images = [
+                        image.original.name.split('/')[-1] for 
+                        image in ProductImage.objects.filter(product=product)
+                    ]
                     
-                    if product_images:
-                        for product_image in product_images:
-                            if not product_image.original.name == image_name:
-                                self._product_image_save(product, image_name, img_temp)
-                    else:
+                    print(product_images)
+
+                    if not image_name in product_images:
                         self._product_image_save(product, image_name, img_temp)
 
     def _product_image_save(self, product, image_name, content):
@@ -198,7 +189,5 @@ class CatalogueImporter(PortationBase):
         product_image.product = product
         product_image.original.save(image_name, File(content), save=True)
         product_image.save()
-        
-        print(product_image)
-        
+                
         return product_image 
