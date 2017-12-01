@@ -16,6 +16,9 @@ from oscar.apps.catalogue.models import AttributeOption
 from oscar.apps.catalogue.models import ProductClass
 from oscar.apps.catalogue.models import ProductImage
 
+from oscar.apps.partner.models import Partner
+from oscar.apps.partner.models import StockRecord
+
 
 class CatalogueImporter(PortationBase):
 
@@ -43,19 +46,21 @@ class CatalogueImporter(PortationBase):
                 except:
                     self.statistics['errors'].append(str(row[0].row))
 
+
     def create_update_product(self, data):
 
         field_values = data[0:len(self.FIELDS)]
         values = [item.value for item in field_values]
         values = dict(zip(self.FIELDS, values))
-        product = None
+
+        partner = self._get_or_create_partner(values[self.PARTNER])
 
         product = self._get_or_create_product(values[self.ID], values[self.UPC])
         p_class = self._get_or_create_product_class(values[self.PRODUCT_CLASS])
         
         product = self._product_save(product, p_class, values[self.TITLE], 
                                 values[self.DESCRIPTION], values[self.UPC])
-
+        
         if values[self.IMAGE]:
             self._get_or_create_product_image(product, values[self.IMAGE])
 
@@ -64,7 +69,10 @@ class CatalogueImporter(PortationBase):
         for category in self._get_or_create_categories(values[self.CATEGORY]):
             product_category = self._product_category_save(product, category)
         
+        #self._get_or_create_partner_stockrecord(product, partner, values[self.SKU])
+
         return product
+
 
     def _save_product_attributes(self, product, data):
         
@@ -89,6 +97,7 @@ class CatalogueImporter(PortationBase):
             i += 1
             value_obj.save()
 
+
     def _get_or_create_categories(self, categories_list):
 
         categories_list = categories_list.split(self.ocs)
@@ -108,6 +117,7 @@ class CatalogueImporter(PortationBase):
 
         return categories
 
+
     def _get_or_create_product(self, id, upc):
         
         try:
@@ -125,11 +135,13 @@ class CatalogueImporter(PortationBase):
 
         return product
 
+
     def _get_or_create_product_class(self, name):
         
         product_class, created = ProductClass.objects.get_or_create(name=name)
         
         return product_class
+
 
     def _product_save(self, product, product_class, title, description, product_upc):
         
@@ -141,6 +153,7 @@ class CatalogueImporter(PortationBase):
         product.save()
 
         return product
+
 
     def _product_category_save(self, product, category):
 
@@ -154,6 +167,7 @@ class CatalogueImporter(PortationBase):
         product_category.save()
 
         return product_category
+
 
     def _get_or_create_product_image(self, product, images_list):
 
@@ -178,10 +192,9 @@ class CatalogueImporter(PortationBase):
                         image in ProductImage.objects.filter(product=product)
                     ]
                     
-                    print(product_images)
-
                     if not image_name in product_images:
                         self._product_image_save(product, image_name, img_temp)
+
 
     def _product_image_save(self, product, image_name, content):
 
@@ -191,3 +204,16 @@ class CatalogueImporter(PortationBase):
         product_image.save()
                 
         return product_image 
+
+
+    def _get_or_create_partner(self, parnter_name):
+        partner, created = Partner.objects.get_or_create(name=parnter_name)
+        return partner
+    '''
+    def _get_or_create_partner_stockrecord(self, product, partner, partner_sku):
+        stockrecord = StockRecord.objects.get_or_create(
+            product = product,
+            partner = partner,
+            partner_sku = partner_sku,
+            )
+    '''
