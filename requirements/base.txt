@@ -60,3 +60,7 @@ openpyxl
 #pycountry==16.11.27.1
 pycountry==17.1.8
 wagtail
+
+# lazy cache 
+# See http://django-cachalot.readthedocs.io/en/latest/quickstart.html
+django-cachalot

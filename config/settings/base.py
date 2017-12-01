@@ -76,7 +76,8 @@ THIRD_PARTY_APPS = [
 
     'widget_tweaks',
     'pycountry',
-    'g_intim.portation'
+    'g_intim.portation',
+    'cachalot'
 ] + get_core_apps(
     ['g_intim.shop.dashboard']
     )
@@ -333,6 +334,10 @@ ADMIN_URL = r'^admin/'
 
 # Your common stuff: Below this line define 3rd party library settings
 # ------------------------------------------------------------------------------
+
+# django-cachalot
+# See http://django-cachalot.readthedocs.io/en/latest/quickstart.html
+CACHALOT_ENABLED = True
 
 # django-wagtail
 # ------------------------------------------------------------------------------
