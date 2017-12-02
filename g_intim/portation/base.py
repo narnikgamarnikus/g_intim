@@ -11,6 +11,7 @@ class PortationBase():
     TITLE = 'Title'
     DESCRIPTION = 'Description'
     IMAGE = 'Image'
+    ATTRIBUTE = 'Attribute'
 
     FIELDS = [
         PARTNER,
@@ -24,5 +25,6 @@ class PortationBase():
         CATEGORY,
         TITLE,
         DESCRIPTION,
-        IMAGE
+        IMAGE,
+        ATTRIBUTE
     ]

@@ -19,6 +19,7 @@ ProductAttributeValue = get_class('catalogue.models', 'ProductAttributeValue')
 AttributeOption = get_class('catalogue.models', 'AttributeOption')
 ProductClass = get_class('catalogue.models', 'ProductClass')
 ProductImage = get_class('catalogue.models', 'ProductImage')
+ProductAttribute = get_class('catalogue.models', 'ProductAttribute')
 
 Partner = get_class('partner.models', 'Partner')
 StockRecord = get_class('partner.models', 'StockRecord')
@@ -47,6 +48,7 @@ class CatalogueImporter(PortationBase):
         self.wb = load_workbook(BytesIO(file.read()))
         self.ocs = settings.CATEGORIES_SPLIT
         self.ois = settings.IMAGES_SPLIT
+        self.oas = settings.ATTRIBUTES_SPLIT
 
     def handle(self):
         self.statistics = {
@@ -73,7 +75,7 @@ class CatalogueImporter(PortationBase):
         field_values = data[0:len(self.FIELDS)]
         values = [item.value for item in field_values]
         values = dict(zip(self.FIELDS, values))
-
+        
         partner = self._get_or_create_partner(values[self.PARTNER])
 
         product = self._get_or_create_product(values[self.ID], values[self.UPC])
@@ -82,26 +84,28 @@ class CatalogueImporter(PortationBase):
         product = self._product_save(product, p_class, values[self.TITLE], 
                                 values[self.DESCRIPTION], values[self.UPC])
         
-        if values[self.IMAGE]:
-            self._get_or_create_product_image(product, values[self.IMAGE])
+        #if values[self.IMAGE]:
+        #    self._get_or_create_product_image(product, values[self.IMAGE])
 
-        self._save_product_attributes(product, data)
+        #self._save_product_attributes(product, data)
 
         for category in self._get_or_create_categories(values[self.CATEGORY]):
             product_category = self._product_category_save(product, category)
-        
+        '''
         self._get_or_create_partner_stockrecord(product, partner, values[self.SKU],
                                                 values[self.PRICE_RETAIL], 
                                                 values[self.COST_PRICE],
                                                 values[self.NUM_IN_STOCK]
                                                 )
-
-        return product
+        '''
+        self._get_or_create_product_attribute(p_class, values[self.ATTRIBUTE])
+        
+        return True#product
 
 
     def _save_product_attributes(self, product, data):
         
-        self.attributes_to_import = product.product_class.attributes.all()
+        self.attributes_tAttributeOptiono_import = product.product_class.attributes.all()
         attrs_values = data[len(self.FIELDS):]
         i = 0
         for attr in self.attributes_to_import:
@@ -235,6 +239,7 @@ class CatalogueImporter(PortationBase):
         partner, created = Partner.objects.get_or_create(name=parnter_name)
         return partner
 
+    
     def _get_or_create_partner_stockrecord(self, product, partner, partner_sku, 
                                             price_retail, cost_price, num_in_stock):
         
@@ -246,5 +251,13 @@ class CatalogueImporter(PortationBase):
                                                                 cost_price = cost_price,
                                                                 num_in_stock = num_in_stock,
                                                                 low_stock_threshold = 5)
-        print(stockrecord)
         return stockrecord
+
+
+    def _get_or_create_product_attribute(self, product_class, attributes):
+        for attr in attributes.split(';'):
+            attr_name = attr.split(':')[0].strip()
+            attr_type = attr.split(':')[1].strip()
+            pa, created = ProductAttribute.objects.get_or_create(product_class=product_class,
+                                                                name=attr_name,
+                                                                type=attr_type)
