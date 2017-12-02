@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
 
+
 from .base import PortationBase
 from oscar.apps.catalogue.models import Product
 from oscar.apps.catalogue.models import Category
@@ -15,6 +16,7 @@ from oscar.apps.catalogue.models import ProductAttributeValue
 from oscar.apps.catalogue.models import AttributeOption
 from oscar.apps.catalogue.models import ProductClass
 from oscar.apps.catalogue.models import ProductImage
+from oscar.apps.catalogue.categories import create_from_breadcrumbs
 
 from oscar.apps.partner.models import Partner
 from oscar.apps.partner.models import StockRecord
@@ -69,7 +71,11 @@ class CatalogueImporter(PortationBase):
         for category in self._get_or_create_categories(values[self.CATEGORY]):
             product_category = self._product_category_save(product, category)
         
-        #self._get_or_create_partner_stockrecord(product, partner, values[self.SKU])
+        self._get_or_create_partner_stockrecord(product, partner, values[self.SKU],
+                                                values[self.PRICE_RETAIL], 
+                                                values[self.COST_PRICE],
+                                                values[self.NUM_IN_STOCK]
+                                                )
 
         return product
 
@@ -209,11 +215,17 @@ class CatalogueImporter(PortationBase):
     def _get_or_create_partner(self, parnter_name):
         partner, created = Partner.objects.get_or_create(name=parnter_name)
         return partner
-    '''
-    def _get_or_create_partner_stockrecord(self, product, partner, partner_sku):
-        stockrecord = StockRecord.objects.get_or_create(
-            product = product,
-            partner = partner,
-            partner_sku = partner_sku,
-            )
-    '''
+
+    def _get_or_create_partner_stockrecord(self, product, partner, partner_sku, 
+                                            price_retail, cost_price, num_in_stock):
+        
+        stockrecord, created = StockRecord.objects.get_or_create(product = product,
+                                                                partner = partner,
+                                                                partner_sku = partner_sku,
+                                                                price_retail = price_retail,
+                                                                price_excl_tax = price_retail,
+                                                                cost_price = cost_price,
+                                                                num_in_stock = num_in_stock,
+                                                                low_stock_threshold = 5)
+        print(stockrecord)
+        return stockrecord
