@@ -9,7 +9,24 @@ from django.core.files.temp import NamedTemporaryFile
 
 
 from .base import PortationBase
-from oscar.apps.catalogue.models import Product
+from oscar.core.loading import get_class
+from oscar.apps.catalogue.categories import create_from_breadcrumbs
+
+Product = get_class('catalogue.models', 'Product')
+Category = get_class('catalogue.models', 'Category')
+ProductCategory = get_class('catalogue.models', 'ProductCategory')
+ProductAttributeValue = get_class('catalogue.models', 'ProductAttributeValue')
+AttributeOption = get_class('catalogue.models', 'AttributeOption')
+ProductClass = get_class('catalogue.models', 'ProductClass')
+ProductImage = get_class('catalogue.models', 'ProductImage')
+
+Partner = get_class('partner.models', 'Partner')
+StockRecord = get_class('partner.models', 'StockRecord')
+
+StockRecord = get_class('catalogue.categories', 'create_from_breadcrumbs')
+
+'''
+#from oscar.apps.catalogue.models import Product
 from oscar.apps.catalogue.models import Category
 from oscar.apps.catalogue.models import ProductCategory
 from oscar.apps.catalogue.models import ProductAttributeValue
@@ -18,9 +35,11 @@ from oscar.apps.catalogue.models import ProductClass
 from oscar.apps.catalogue.models import ProductImage
 from oscar.apps.catalogue.categories import create_from_breadcrumbs
 
+from oscar.apps.catalogue.categories import create_from_breadcrumbs
+
 from oscar.apps.partner.models import Partner
 from oscar.apps.partner.models import StockRecord
-
+'''
 
 class CatalogueImporter(PortationBase):
 
