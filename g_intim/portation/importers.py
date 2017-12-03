@@ -17,7 +17,6 @@ Product = get_class('catalogue.models', 'Product')
 Category = get_class('catalogue.models', 'Category')
 ProductCategory = get_class('catalogue.models', 'ProductCategory')
 ProductAttributeValue = get_class('catalogue.models', 'ProductAttributeValue')
-
 AttributeOptionGroup = get_class('catalogue.models', 'AttributeOptionGroup')
 AttributeOption = get_class('catalogue.models', 'AttributeOption')
 ProductClass = get_class('catalogue.models', 'ProductClass')
@@ -47,7 +46,7 @@ class CatalogueImporter(PortationBase):
         return self.statistics
 
     def _import(self):
-        #self._delete_all()
+        self._delete_all()
         ws = self.wb.active
         self.max_row = ws.max_row
         for row in ws:
@@ -63,7 +62,7 @@ class CatalogueImporter(PortationBase):
         field_values = data[0:len(self.FIELDS)]
         values = [item.value for item in field_values]
         values = dict(zip(self.FIELDS, values))
-        
+
         partner = self._get_or_create_partner(values[self.PARTNER])
 
         product = self._get_or_create_product(values[self.ID], values[self.UPC])
@@ -75,8 +74,15 @@ class CatalogueImporter(PortationBase):
         #if values[self.IMAGE]:
         #    self._get_or_create_product_image(product, values[self.IMAGE])
 
-        for category in self._get_or_create_categories(values[self.CATEGORY]):
-            product_category = self._product_category_save(product, category)
+        #for category in self._get_or_create_categories(values[self.PRODUCT_CLASS],
+        #                                            values[self.CATEGORY]):
+        #    product_category = self._product_category_save(product, category)
+        product_category = self._product_category_save(
+            product, 
+            self._get_or_create_categories(
+                values[self.PRODUCT_CLASS],
+                values[self.CATEGORY])
+            )
         self._get_or_create_partner_stockrecord(product, partner, values[self.SKU],
                                                 values[self.PRICE_RETAIL], 
                                                 values[self.COST_PRICE],
@@ -84,7 +90,6 @@ class CatalogueImporter(PortationBase):
                                                 )
         self._get_or_create_product_attribute(p_class, values[self.ATTRIBUTE])
         self._save_product_attributes(product, data)
-
 
         return product
 
@@ -117,10 +122,10 @@ class CatalogueImporter(PortationBase):
             value_obj.save()
             
 
-    def _get_or_create_categories(self, categories_list):
-
-        categories_list = categories_list.split(self.ocs)
-
+    def _get_or_create_categories(self, root_category, categories_list):
+        breadcrumbs = '{} > {}'.format(root_category, categories_list)
+        created_breadcrumbs = create_from_breadcrumbs(breadcrumbs)
+        '''
         if isinstance(categories_list, type(None)):
             categories_list = []
         else:
@@ -133,9 +138,14 @@ class CatalogueImporter(PortationBase):
                 for category
                 in categories_list
             ]
-
         return categories
-
+        return [
+            Category.objects.get(name=name)
+            for name 
+            in [root_category, categories_list]
+        ]
+        '''
+        return created_breadcrumbs
 
     def _get_or_create_product(self, id, upc):
         

@@ -79,13 +79,16 @@ THIRD_PARTY_APPS = [
     'g_intim.portation',
     'cachalot'
 ] + get_core_apps(
-    ['g_intim.shop.dashboard']
+            [
+        'g_intim.shop.dashboard',
+        'g_intim.apps.catalogue'
+        ]
     )
 
 # Apps specific for this project go here.
 LOCAL_APPS = [
     # custom users app
-    'g_intim.users.apps.UsersConfig',
+    'g_intim.users.apps.UsersConfig'
     # Your stuff: custom apps go here
 ]
 
