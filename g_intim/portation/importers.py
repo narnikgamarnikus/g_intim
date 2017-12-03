@@ -47,7 +47,7 @@ class CatalogueImporter(PortationBase):
         return self.statistics
 
     def _import(self):
-        self._delete_all()
+        #self._delete_all()
         ws = self.wb.active
         self.max_row = ws.max_row
         for row in ws:
@@ -92,9 +92,12 @@ class CatalogueImporter(PortationBase):
     def _save_product_attributes(self, product, data):
         self.attributes_to_import = product.product_class.attributes.all()
         attrs_values = data[len(self.FIELDS):]
-        print(attrs_values)
         i = 0
         for attr in self.attributes_to_import:
+            if attrs_values[i].value:
+                option = str(attrs_values[i].value).capitalize()
+            else: 
+                option = ''
             try:
                 value_obj = product.attribute_values.get(attribute=attr)
             except ProductAttributeValue.DoesNotExist:
@@ -102,14 +105,13 @@ class CatalogueImporter(PortationBase):
                 value_obj.attribute = attr
                 value_obj.product = product
             try:
-                value_obj._set_value(attrs_values[i].value.capitalize())
+                value_obj._set_value(option)
             except AttributeOption.DoesNotExist:
                 attr_option = AttributeOption.objects.create(
                     group=value_obj.attribute.option_group,
-                    option=attrs_values[i].value.capitalize()
+                    option=option
                 )
                 value_obj._set_value(attr_option)
-                print(value_obj)
             
             i += 1
             value_obj.save()
