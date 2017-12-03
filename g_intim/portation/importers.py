@@ -11,36 +11,23 @@ from django.core.files.temp import NamedTemporaryFile
 from .base import PortationBase
 from oscar.core.loading import get_class
 from oscar.apps.catalogue.categories import create_from_breadcrumbs
+from oscar.core.utils import slugify
 
 Product = get_class('catalogue.models', 'Product')
 Category = get_class('catalogue.models', 'Category')
 ProductCategory = get_class('catalogue.models', 'ProductCategory')
 ProductAttributeValue = get_class('catalogue.models', 'ProductAttributeValue')
+
+AttributeOptionGroup = get_class('catalogue.models', 'AttributeOptionGroup')
 AttributeOption = get_class('catalogue.models', 'AttributeOption')
 ProductClass = get_class('catalogue.models', 'ProductClass')
 ProductImage = get_class('catalogue.models', 'ProductImage')
 ProductAttribute = get_class('catalogue.models', 'ProductAttribute')
-
 Partner = get_class('partner.models', 'Partner')
 StockRecord = get_class('partner.models', 'StockRecord')
 
-StockRecord = get_class('catalogue.categories', 'create_from_breadcrumbs')
+create_from_breadcrumbs = get_class('catalogue.categories', 'create_from_breadcrumbs')
 
-'''
-#from oscar.apps.catalogue.models import Product
-from oscar.apps.catalogue.models import Category
-from oscar.apps.catalogue.models import ProductCategory
-from oscar.apps.catalogue.models import ProductAttributeValue
-from oscar.apps.catalogue.models import AttributeOption
-from oscar.apps.catalogue.models import ProductClass
-from oscar.apps.catalogue.models import ProductImage
-from oscar.apps.catalogue.categories import create_from_breadcrumbs
-
-from oscar.apps.catalogue.categories import create_from_breadcrumbs
-
-from oscar.apps.partner.models import Partner
-from oscar.apps.partner.models import StockRecord
-'''
 
 class CatalogueImporter(PortationBase):
 
@@ -60,6 +47,7 @@ class CatalogueImporter(PortationBase):
         return self.statistics
 
     def _import(self):
+        self._delete_all()
         ws = self.wb.active
         self.max_row = ws.max_row
         for row in ws:
@@ -87,26 +75,24 @@ class CatalogueImporter(PortationBase):
         #if values[self.IMAGE]:
         #    self._get_or_create_product_image(product, values[self.IMAGE])
 
-        #self._save_product_attributes(product, data)
-
         for category in self._get_or_create_categories(values[self.CATEGORY]):
             product_category = self._product_category_save(product, category)
-        '''
         self._get_or_create_partner_stockrecord(product, partner, values[self.SKU],
                                                 values[self.PRICE_RETAIL], 
                                                 values[self.COST_PRICE],
                                                 values[self.NUM_IN_STOCK]
                                                 )
-        '''
         self._get_or_create_product_attribute(p_class, values[self.ATTRIBUTE])
-        
-        return True#product
+        self._save_product_attributes(product, data)
+
+
+        return product
 
 
     def _save_product_attributes(self, product, data):
-        
-        self.attributes_tAttributeOptiono_import = product.product_class.attributes.all()
+        self.attributes_to_import = product.product_class.attributes.all()
         attrs_values = data[len(self.FIELDS):]
+        print(attrs_values)
         i = 0
         for attr in self.attributes_to_import:
             try:
@@ -116,16 +102,18 @@ class CatalogueImporter(PortationBase):
                 value_obj.attribute = attr
                 value_obj.product = product
             try:
-                value_obj._set_value(attrs_values[i].value)
+                value_obj._set_value(attrs_values[i].value.capitalize())
             except AttributeOption.DoesNotExist:
                 attr_option = AttributeOption.objects.create(
                     group=value_obj.attribute.option_group,
-                    option=attrs_values[i].value
+                    option=attrs_values[i].value.capitalize()
                 )
                 value_obj._set_value(attr_option)
+                print(value_obj)
+            
             i += 1
             value_obj.save()
-
+            
 
     def _get_or_create_categories(self, categories_list):
 
@@ -186,8 +174,6 @@ class CatalogueImporter(PortationBase):
 
     def _product_category_save(self, product, category):
 
-        ProductCategory.objects.filter(product=product).delete()
-
         product_category = ProductCategory()
         
         product_category.product = product
@@ -200,7 +186,6 @@ class CatalogueImporter(PortationBase):
 
     def _get_or_create_product_image(self, product, images_list):
 
-            ProductImage.objects.filter(product=product).delete()
 
             for image in images_list.split(self.ois):
                 image = image.strip()
@@ -220,7 +205,8 @@ class CatalogueImporter(PortationBase):
                         image.original.name.split('/')[-1] for 
                         image in ProductImage.objects.filter(product=product)
                     ]
-                    
+                    print(image_name)
+                    print(product_images)
                     if not image_name in product_images:
                         self._product_image_save(product, image_name, img_temp)
 
@@ -243,14 +229,15 @@ class CatalogueImporter(PortationBase):
     def _get_or_create_partner_stockrecord(self, product, partner, partner_sku, 
                                             price_retail, cost_price, num_in_stock):
         
-        stockrecord, created = StockRecord.objects.get_or_create(product = product,
+        stockrecord, created = StockRecord.objects.get_or_create(partner_sku=partner_sku,
+                                                                product = product,
                                                                 partner = partner,
-                                                                partner_sku = partner_sku,
                                                                 price_retail = price_retail,
                                                                 price_excl_tax = price_retail,
                                                                 cost_price = cost_price,
                                                                 num_in_stock = num_in_stock,
                                                                 low_stock_threshold = 5)
+        
         return stockrecord
 
 
@@ -260,4 +247,28 @@ class CatalogueImporter(PortationBase):
             attr_type = attr.split(':')[1].strip()
             pa, created = ProductAttribute.objects.get_or_create(product_class=product_class,
                                                                 name=attr_name,
-                                                                type=attr_type)
+                                                                type=attr_type,
+                                                                code=slugify(attr_name))
+            #self._get_or_create_attribute_option_group(attr_name)
+
+
+    def _get_or_create_attribute_option_group(self, name):
+        aog, created = AttributeOptionGroup.objects.get_or_create(name=name)
+        return aog
+
+    def _get_or_cteate_attribute_option(self, group, name):
+        ao, created = AttributeOption.objects.get_or_create(group=group, name=name) 
+        return ao
+
+    def _delete_all(self):
+        Product.objects.all().delete()
+        Category.objects.all().delete()
+        ProductCategory.objects.all().delete()
+        ProductAttributeValue.objects.all().delete()
+        AttributeOptionGroup.objects.all().delete()
+        AttributeOption.objects.all().delete()
+        ProductClass.objects.all().delete()
+        ProductImage.objects.all().delete()
+        ProductAttribute.objects.all().delete()
+        Partner.objects.all().delete()
+        StockRecord.objects.all().delete()
