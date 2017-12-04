@@ -12,9 +12,9 @@ class CustomCatalogueApplication(BaseCatalogueApplication):
 		urlpatterns = [
 			#url(r'^category/(?P<category_slug>[\w-]+(/[\w-]+)*)_(?P<pk>[\w-]+)/((?P<filter_code>[\w]+)(-(?P<filter_name>[\w/-]+)))*/$',
 			#	self.filter_view.as_view(), name='filter'),
-			url(r'^category/(?P<category_slug>[\w-]+(/[\w-]+)*)_(?P<pk>[\w-]+)/(?P<filter_code>[\w]+)(-(?P<filter_name>[\w-]+))/$',
+			url(r'^category/(?P<category_slug>[\w-]+(/[\w-]+)*)_(?P<pk>[\w-]+)/(?P<filter_code_0>[\w]+)(-(?P<filter_name_0>[\w-]+))/$',
 				self.filter_view.as_view(), name='filter'),			
-			url(r'^category/(?P<category_slug>[\w-]+(/[\w-]+)*)_(?P<pk>[\w-]+)/(?P<filter_code>[\w]+)(-(?P<filter_name>[\w-]+))/(?P<filter_code_two>[\w]+)(-(?P<filter_name_two>[\w-]+))/$',
+			url(r'^category/(?P<category_slug>[\w-]+(/[\w-]+)*)_(?P<pk>[\w-]+)/(?P<filter_code_0>[\w]+)(-(?P<filter_name_0>[\w-]+))/(?P<filter_code_1>[\w]+)(-(?P<filter_name_1>[\w-]+))/$',
 				self.filter_view.as_view(), name='filter'),			
 		] + super(CustomCatalogueApplication, self).get_urls()
 		return self.post_process_urls(urlpatterns)

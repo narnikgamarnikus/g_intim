@@ -18,11 +18,14 @@ class FilterView(ProductCategoryView):
 
 
 	def get(self, request, *args, **kwargs):
+		
+		arguments = {
+			self.kwargs.get('filter_code_{}'.format(item), None):
+			self.kwargs.get('filter_name_{}'.format(item), None) 
+			for item in range(10) 
+			if not self.kwargs.get('filter_code_{}'.format(item), None) is None
+		}
 
-		print(self.kwargs.get('filter_code', None))
-		print(self.kwargs.get('filter_name', None))
-		print(self.kwargs.get('filter_code_two', None))
-		print(self.kwargs.get('filter_name_two', None))
 		# Fetch the category; return 404 or redirect as needed
 		self.category = self.get_category()
 		potential_redirect = self.redirect_if_necessary(
