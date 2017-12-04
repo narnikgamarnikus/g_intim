@@ -8,6 +8,41 @@ ProductCategory = get_class('catalogue.models', 'ProductCategory')
 ProductClass = get_class('catalogue.models', 'ProductClass')
 Category = get_class('catalogue.models', 'Category')
 
+class FilterView(ProductCategoryView):
+	"""
+	Browse products in a given category
+	"""
+	context_object_name = "products"
+	template_name = 'catalogue/category.html'
+	enforce_paths = False
+
+
+	def get(self, request, *args, **kwargs):
+		print(self.kwargs)
+		print(self.kwargs['category_slug'])
+		print('filter code: ' + str(self.kwargs['filter_code']))
+		print('filter name: ' + str(self.kwargs['filter_name']))
+		#print(self.kwargs['category_slug'])
+		#print(self.kwargs['pk'])
+		# Fetch the category; return 404 or redirect as needed
+		self.category = self.get_category()
+		potential_redirect = self.redirect_if_necessary(
+		    request.path, self.category)
+		#print(potential_redirect)
+		if potential_redirect is not None:
+		    return potential_redirect
+
+		try:
+		    self.search_handler = self.get_search_handler(
+		        request.GET, request.get_full_path(), self.get_categories())
+		    #print(self.search_handler)
+		except InvalidPage:
+		    messages.error(request, _('The given page number was invalid.'))
+		    return redirect(self.category.get_absolute_url())
+
+		return super(ProductCategoryView, self).get(request, *args, **kwargs)
+
+'''
 class ProductClassView(TemplateView):
 	"""
 	Browse products in a given product_class
@@ -96,3 +131,4 @@ class ProductClassView(TemplateView):
 			self.context_object_name)
 		context.update(search_context)
 		return context
+'''
