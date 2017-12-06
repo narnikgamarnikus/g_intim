@@ -7,4 +7,4 @@ set -o xtrace
 
 
 rm -f './celerybeat.pid'
-celery -A g_intim.taskapp beat -l INFO
+# celery -A g_intim.taskapp beat -l INFO
