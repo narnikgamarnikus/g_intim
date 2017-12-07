@@ -76,7 +76,7 @@ class CatalogueImporter(PortationBase):
 
         for category in self._get_or_create_categories(values[self.PRODUCT_CLASS],
                                                     values[self.CATEGORY]):
-            product_category = self._product_category_save(product, category)
+        #product_category = self._product_category_save(product, category)
         product_category = self._product_category_save(
             product, 
             self._get_or_create_categories(
