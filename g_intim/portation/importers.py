@@ -74,8 +74,8 @@ class CatalogueImporter(PortationBase):
         if values[self.IMAGE]:
             self._get_or_create_product_image(product, values[self.IMAGE])
 
-        for category in self._get_or_create_categories(values[self.PRODUCT_CLASS],
-                                                    values[self.CATEGORY]):
+        #for category in self._get_or_create_categories(values[self.PRODUCT_CLASS],
+        #                                            values[self.CATEGORY]):
         #product_category = self._product_category_save(product, category)
         product_category = self._product_category_save(
             product, 
