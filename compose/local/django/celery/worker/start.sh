@@ -6,4 +6,4 @@ set -o nounset
 set -o xtrace
 
 
-celery -A g_intim.taskapp worker -l INFO
+#celery -A g_intim.taskapp worker -l INFO
