@@ -1,0 +1,48 @@
+{% load currency_filters %}
+{% load category_tags %}
+{% load i18n %}
+<nav class="navbar container">
+    <div class="col-sm-12">
+        {% include "partials/brand.html" %}
+        <!--div class="pull-right">
+            <button type="button" class="toggle-menu" data-toggle="collapse" data-target="#sidemenu">
+                <i class="ico-sidebar-r"></i>
+            </button>
+        </div-->
+        {# Mini-basket wrapped in a block so some templates can now display it #}
+        {% block mini_basket %}{% include "partials/basket.html" %}{% endblock %}
+        <button class="navbar-toggle collapsed" data-target="#navbar" data-toggle="collapse" type="button">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav pull-right">
+            {% category_tree depth=2 as tree_categories %}
+            {% if tree_categories %}
+                {% for tree_category, info in tree_categories %}
+                <li class="dropdown">
+                    {% if info.has_children %}
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">{{ tree_category.name }}</a>
+                    <ul class="dropdown-menu">
+                        {% for children in tree_category.get_children %}
+                            {% if children.has_children %}
+                                <li><a href="" class="dropdown-toggle" data-toggle="dropdown">{{ children.name }}</a></li>
+                                <ul class="dropdown-menu">
+                                {% for child in children %}
+                                    <li><a href="{{ child.get_absolute_url }}">{{ child.name }}</a></li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <li><a href="{{ children.get_absolute_url }}">{{ children.name }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
